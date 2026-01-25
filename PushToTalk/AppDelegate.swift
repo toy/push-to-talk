@@ -13,7 +13,7 @@ import AVFoundation
 import Carbon.HIToolbox.Events
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
   @IBOutlet weak var statusMenu: NSMenu!
   @IBOutlet weak var menuItemToggle: NSMenuItem!
 
@@ -54,6 +54,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     })
   }
 
+  func applicationWillTerminate(_ notification: Notification) {
+    toggleMute(false)
+  }
+
   @IBAction func toggleAction(_ sender: NSMenuItem) {
     pushToTalk = !pushToTalk
     updateActionTitle()
@@ -61,8 +65,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   @IBAction func menuItemQuitAction(_ sender: NSMenuItem) {
-    toggleMute(false)
-    exit(0)
+    if pushToTalk {
+      apUp?.delegate = self
+      apUp?.play()
+    } else {
+      quit()
+    }
+  }
+
+  func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+    quit()
+  }
+
+  func quit() {
+    NSApplication.shared.terminate(nil)
   }
 
   func handleFlagChangedEvent(_ theEvent:NSEvent!) {
