@@ -17,7 +17,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   @IBOutlet weak var statusMenu: NSMenu!
   @IBOutlet weak var menuItemToggle: NSMenuItem!
 
-  var enabled = true
+  var pushToTalk = true
   var pushed = false
   var muted:Bool?
 
@@ -39,16 +39,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     apUp = loadPlayer("sounds/up")
     apDown = loadPlayer("sounds/down")
 
-    updateToggleTitle()
-    updateMic()
-
-    statusItem.image = muteIcon
     statusItem.menu = statusMenu
 
-    // handle when application is on background
+    updateActionTitle()
+    toggleMute(true)
+
+    // handle when application is in background
     NSEvent.addGlobalMonitorForEvents(matching: NSEvent.EventTypeMask.flagsChanged, handler: handleFlagChangedEvent)
 
-    // handle when application is on foreground
+    // handle when application is in foreground
     NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.flagsChanged, handler: { (theEvent) -> NSEvent? in
       self.handleFlagChangedEvent(theEvent)
       return theEvent
@@ -56,29 +55,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   @IBAction func toggleAction(_ sender: NSMenuItem) {
-    enabled = !enabled
-    updateToggleTitle()
-    updateMic()
+    pushToTalk = !pushToTalk
+    updateActionTitle()
+    updateMute()
   }
 
   @IBAction func menuItemQuitAction(_ sender: NSMenuItem) {
     toggleMute(false)
     exit(0)
-  }
-
-  func updateToggleTitle() {
-    menuItemToggle.title = enabled ? "Disable / push-to-mute" : "Enable / push-to-talk"
-    (enabled ? apDown : apUp)?.play()
-  }
-
-  func loadPlayer(_ name:String) -> AVAudioPlayer? {
-    if let path = Bundle.main.path(forResource: name, ofType: "mp3") {
-      let ap:AVAudioPlayer? = try? AVAudioPlayer(contentsOf: URL(fileURLWithPath: path))
-      ap?.volume = 0.5
-      return ap
-    } else {
-      return nil
-    }
   }
 
   func handleFlagChangedEvent(_ theEvent:NSEvent!) {
@@ -92,27 +76,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       if timestamp - previousTimestamp < 0.2 {
         previousTimestamp = 0
 
-        enabled = !enabled
-        updateToggleTitle()
+        pushToTalk = !pushToTalk
+        updateActionTitle()
       } else {
         previousTimestamp = timestamp
       }
     }
 
-    updateMic()
+    updateMute()
   }
 
-  func updateMic() {
-    let mute = pushed != enabled
-    if muted != mute {
-      muted = mute
+  func updateMute() {
+    toggleMute(pushed != pushToTalk)
+  }
 
-      toggleMute(mute)
-      statusItem.image = mute ? muteIcon : talkIcon
-    }
+  func updateActionTitle() {
+    menuItemToggle.title = pushToTalk ? "Disable / push-to-mute" : "Enable / push-to-talk"
+    (pushToTalk ? apDown : apUp)?.play()
   }
 
   func toggleMute(_ mute:Bool) {
+    if muted != mute {
+      muted = mute
+
+      setDefaultInputDeviceMute(mute)
+      statusItem.button?.image = mute ? muteIcon : talkIcon
+    }
+  }
+
+  func setDefaultInputDeviceMute(_ mute:Bool) {
     // https://github.com/paulreimer/ofxAudioFeatures/blob/master/src/ofxAudioDeviceControl.mm
     var defaultInputDeviceId = AudioDeviceID(0)
     getDefaultInputDevice(&defaultInputDeviceId)
@@ -123,12 +115,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       mElement: AudioObjectPropertyElement(kAudioObjectPropertyElementMaster))
 
     let size = UInt32(MemoryLayout<UInt32>.size)
-    var mute:UInt32 = mute ? 1 : 0;
+    var mute:UInt32 = mute ? 1 : 0
 
     let err = AudioObjectSetPropertyData(defaultInputDeviceId, &address, 0, nil, size, &mute)
 
     if (err != kAudioHardwareNoError) {
-      NSLog("Error setting audio object property data #%d", err);
+      NSLog("Error setting audio object property data #%d", err)
     }
   }
 
@@ -150,7 +142,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       &defaultOutputDeviceID)
 
     if (err != kAudioHardwareNoError) {
-      NSLog("Error setting audio object property data #%d", err);
+      NSLog("Error setting audio object property data #%d", err)
+    }
+  }
+
+  func loadPlayer(_ name:String) -> AVAudioPlayer? {
+    if let path = Bundle.main.path(forResource: name, ofType: "mp3") {
+      let ap:AVAudioPlayer? = try? AVAudioPlayer(contentsOf: URL(fileURLWithPath: path))
+      ap?.volume = 0.5
+      return ap
+    } else {
+      return nil
     }
   }
 }
