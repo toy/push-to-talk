@@ -29,8 +29,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
 
   let statusItem = NSStatusBar.system.statusItem(withLength: -1)
 
-  var previousTimestamp:Double = 0
-
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     talkIcon = NSImage(named: "talk")
     muteIcon = NSImage(named: "mute")
@@ -86,17 +84,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
 
     pushed = theEvent.modifierFlags.contains(.function)
 
-    if pushed {
-      let timestamp = Date().timeIntervalSince1970
-
-      if timestamp - previousTimestamp < 0.2 {
-        previousTimestamp = 0
-
-        pushToTalk = !pushToTalk
-        updateActionTitle()
-      } else {
-        previousTimestamp = timestamp
-      }
+    if pushed && theEvent.modifierFlags.contains(.shift) {
+      pushToTalk = !pushToTalk
+      updateActionTitle()
     }
 
     updateMute()

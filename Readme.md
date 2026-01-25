@@ -4,7 +4,7 @@ OSX status bar application that mutes microphone until `fn` is pressed.
 
 Icon will turn orange when microphone is not muted.
 
-Double press `fn` or use a menu by clicking on the icon to reverse the behaviour.
+Press `fn` while pressing `⇧`/`Shift` or the other way around, or use a menu by clicking on the icon to reverse the behaviour.
 
 ## Troubleshooting
 
