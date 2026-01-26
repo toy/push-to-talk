@@ -12,20 +12,20 @@ import Foundation
 import AVFoundation
 import Carbon.HIToolbox.Events
 
-@NSApplicationMain
+@main
 class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
   @IBOutlet weak var statusMenu: NSMenu!
   @IBOutlet weak var menuItemToggle: NSMenuItem!
 
   var pushToTalk = true
   var pushed = false
-  var muted:Bool?
+  var muted: Bool?
 
-  var talkIcon:NSImage?
-  var muteIcon:NSImage?
+  var talkIcon: NSImage?
+  var muteIcon: NSImage?
 
-  var apUp:AVAudioPlayer?
-  var apDown:AVAudioPlayer?
+  var apUp: AVAudioPlayer?
+  var apDown: AVAudioPlayer?
 
   let statusItem = NSStatusBar.system.statusItem(withLength: -1)
 
@@ -46,7 +46,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
     NSEvent.addGlobalMonitorForEvents(matching: NSEvent.EventTypeMask.flagsChanged, handler: handleFlagChangedEvent)
 
     // handle when application is in foreground
-    NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.flagsChanged, handler: { (theEvent) -> NSEvent? in
+    NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.flagsChanged, handler: { theEvent -> NSEvent? in
       self.handleFlagChangedEvent(theEvent)
       return theEvent
     })
@@ -79,7 +79,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
     NSApplication.shared.terminate(nil)
   }
 
-  func handleFlagChangedEvent(_ theEvent:NSEvent!) {
+  func handleFlagChangedEvent(_ theEvent: NSEvent) {
     if theEvent.keyCode != kVK_Function { return }
 
     pushed = theEvent.modifierFlags.contains(.function)
@@ -101,7 +101,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
     (pushToTalk ? apDown : apUp)?.play()
   }
 
-  func toggleMute(_ mute:Bool) {
+  func toggleMute(_ mute: Bool) {
     if muted != mute {
       muted = mute
 
@@ -110,7 +110,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
     }
   }
 
-  func setDefaultInputDeviceMute(_ mute:Bool) {
+  func setDefaultInputDeviceMute(_ mute: Bool) {
     // https://github.com/paulreimer/ofxAudioFeatures/blob/master/src/ofxAudioDeviceControl.mm
     var defaultInputDeviceId = AudioDeviceID(0)
     getDefaultInputDevice(&defaultInputDeviceId)
@@ -121,18 +121,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
       mElement: AudioObjectPropertyElement(kAudioObjectPropertyElementMaster))
 
     let size = UInt32(MemoryLayout<UInt32>.size)
-    var mute:UInt32 = mute ? 1 : 0
+    var muteValue: UInt32 = mute ? 1 : 0
 
-    let err = AudioObjectSetPropertyData(defaultInputDeviceId, &address, 0, nil, size, &mute)
+    let err = AudioObjectSetPropertyData(defaultInputDeviceId, &address, 0, nil, size, &muteValue)
 
     if (err != kAudioHardwareNoError) {
       NSLog("Error setting audio object property data #%d", err)
     }
   }
 
-  func getDefaultInputDevice(_ defaultOutputDeviceID:inout UInt32)  {
-    defaultOutputDeviceID = AudioDeviceID(0)
-    var defaultOutputDeviceIDSize = UInt32(MemoryLayout.size(ofValue: defaultOutputDeviceID))
+  func getDefaultInputDevice(_ defaultInputDeviceID: inout UInt32) {
+    defaultInputDeviceID = AudioDeviceID(0)
+    var defaultInputDeviceIDSize = UInt32(MemoryLayout.size(ofValue: defaultInputDeviceID))
 
     var getDefaultInputDevicePropertyAddress = AudioObjectPropertyAddress(
       mSelector: AudioObjectPropertySelector(kAudioHardwarePropertyDefaultInputDevice),
@@ -144,17 +144,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
       &getDefaultInputDevicePropertyAddress,
       0,
       nil,
-      &defaultOutputDeviceIDSize,
-      &defaultOutputDeviceID)
+      &defaultInputDeviceIDSize,
+      &defaultInputDeviceID)
 
     if (err != kAudioHardwareNoError) {
       NSLog("Error setting audio object property data #%d", err)
     }
   }
 
-  func loadPlayer(_ name:String) -> AVAudioPlayer? {
+  func loadPlayer(_ name: String) -> AVAudioPlayer? {
     if let path = Bundle.main.path(forResource: name, ofType: "mp3") {
-      let ap:AVAudioPlayer? = try? AVAudioPlayer(contentsOf: URL(fileURLWithPath: path))
+      let ap: AVAudioPlayer? = try? AVAudioPlayer(contentsOf: URL(fileURLWithPath: path))
       ap?.volume = 0.5
       return ap
     } else {
