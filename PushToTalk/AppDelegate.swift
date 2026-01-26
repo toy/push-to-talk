@@ -38,6 +38,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
     apDown = loadPlayer("sounds/down")
 
     statusItem.menu = statusMenu
+    menuItemToggle.keyEquivalent = "🌐"
+    menuItemToggle.keyEquivalentModifierMask = .shift
 
     updateActionTitle()
     toggleMute(true)
