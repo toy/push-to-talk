@@ -61,7 +61,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
   @IBAction func toggleAction(_ sender: NSMenuItem) {
     pushToTalk = !pushToTalk
     updateActionTitle()
-    updateMute()
+    toggleMute(pushed != pushToTalk)
   }
 
   @IBAction func menuItemQuitAction(_ sender: NSMenuItem) {
@@ -81,21 +81,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
     NSApplication.shared.terminate(nil)
   }
 
-  func handleFlagChangedEvent(_ theEvent: NSEvent) {
-    if theEvent.keyCode != kVK_Function { return }
+  func handleFlagChangedEvent(_ event: NSEvent) {
+    let isFunctionKeyEvent = event.keyCode == kVK_Function
+    let isShiftKeyEvent = event.keyCode == kVK_Shift || event.keyCode == kVK_RightShift
+    if !isFunctionKeyEvent && !isShiftKeyEvent { return }
 
-    pushed = theEvent.modifierFlags.contains(.function)
-
-    if pushed && theEvent.modifierFlags.contains(.shift) {
+    if event.modifierFlags.contains(.function) && event.modifierFlags.contains(.shift) {
       pushToTalk = !pushToTalk
       updateActionTitle()
+      toggleMute(pushed == pushToTalk)
+    } else if isFunctionKeyEvent {
+      pushed = event.modifierFlags.contains(.function)
+      toggleMute(pushed != pushToTalk)
     }
-
-    updateMute()
-  }
-
-  func updateMute() {
-    toggleMute(pushed != pushToTalk)
   }
 
   func updateActionTitle() {
