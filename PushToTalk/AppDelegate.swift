@@ -28,6 +28,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
   var apDown: AVAudioPlayer?
 
   let statusItem = NSStatusBar.system.statusItem(withLength: -1)
+  let screenLockedNotification = Notification.Name("com.apple.screenIsLocked")
 
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     talkIcon = NSImage(named: "talk")
@@ -52,9 +53,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
       self.handleFlagChangedEvent(theEvent)
       return theEvent
     })
+
+    DistributedNotificationCenter.default().addObserver(
+      self,
+      selector: #selector(handleScreenDidLock(_:)),
+      name: screenLockedNotification,
+      object: nil)
   }
 
   func applicationWillTerminate(_ notification: Notification) {
+    DistributedNotificationCenter.default().removeObserver(
+      self,
+      name: screenLockedNotification,
+      object: nil)
+
     toggleMute(false)
   }
 
@@ -79,6 +91,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, AVAudioPlayerDelegate {
 
   func quit() {
     NSApplication.shared.terminate(nil)
+  }
+
+  @objc func handleScreenDidLock(_ notification: Notification) {
+    if !pushToTalk {
+      pushToTalk = true
+      updateActionTitle()
+    }
+    toggleMute(true)
   }
 
   func handleFlagChangedEvent(_ event: NSEvent) {
